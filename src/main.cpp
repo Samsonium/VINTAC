@@ -2,46 +2,48 @@
 // Created by Samsonium on 1/30/2024.
 //
 
-#include <SPI.h>
-#include <Wire.h>
 #include <Arduino.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <U8glib.h>
 
-GFXcanvas1 gfx(128, 64);
-Adafruit_SSD1306 lcd(128, 64, &Wire, -1);
-
-static const unsigned char PROGMEM logo_bmp[] =
-{ 0b00000000, 0b11000000,
-  0b00000001, 0b11000000,
-  0b00000001, 0b11000000,
-  0b00000011, 0b11100000,
-  0b11110011, 0b11100000,
-  0b11111110, 0b11111000,
-  0b01111110, 0b11111111,
-  0b00110011, 0b10011111,
-  0b00011111, 0b11111100,
-  0b00001101, 0b01110000,
-  0b00011011, 0b10100000,
-  0b00111111, 0b11100000,
-  0b00111111, 0b11110000,
-  0b01111100, 0b11110000,
-  0b01110000, 0b01110000,
-  0b00000000, 0b00110000 };
+const char* text = "Hello, World!";
+U8GLIB_SSD1309_128X64 u8g(U8G_I2C_OPT_NONE | U8G_I2C_OPT_DEV_0);
 
 void setup() {
     Serial.begin(9600);
-    Serial.println("Hello, World!");
 
-    gfx.fillScreen(0xFFFF);
+    switch (u8g.getMode()) {
+        case U8G_MODE_R3G3B2:
+            u8g.setColorIndex(255);
+            break;
 
-    if(!lcd.begin(SSD1306_SWITCHCAPVCC, 0x3D)) {
-        Serial.println(F("SSD1306 allocation failed"));
-        for(;;); // Don't proceed, loop forever
+        case U8G_MODE_GRAY2BIT:
+            u8g.setColorIndex(3);
+            break;
+
+        case U8G_MODE_BW:
+            u8g.setColorIndex(1);
+            break;
+
+        case U8G_MODE_HICOLOR:
+            u8g.setHiColorByRGB(255, 255, 255);
+            break;
+
+        default:
+            Serial.println("Cannot determine display mode");
     }
 
-    lcd.clearDisplay();
-    lcd.drawBitmap(0, 0, gfx.getBuffer(), 128, 64, SSD1306_WHITE);
-    lcd.display();
+    pinMode(8, OUTPUT);
 }
-void loop() {}
+
+void draw() {
+    u8g.setFont(u8g_font_unifont);
+    u8g.drawStr(64 - u8g.getStrWidth(text), 10, text);
+}
+
+void loop() {
+    u8g.firstPage();
+    do draw();
+    while (u8g.nextPage());
+
+    delay(50);
+}
